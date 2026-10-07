@@ -1,5 +1,7 @@
+import type { ArrangementClip } from './arrangement';
+
 export type EmotionLabel = '暴躁老哥' | '温柔姐姐' | '阴阳怪气' | '元气满满';
-export type StudioStage = 'record' | 'crop' | 'emotion' | 'cover' | 'collection';
+export type StudioStage = 'record' | 'arrange' | 'emotion' | 'cover' | 'collection';
 export interface CropRange { start: number; end: number }
 export interface AudioFeatures { loudness: number; dynamics: number; pitch: number; zeroCrossing: number; pauseRatio: number; tempoVariation: number }
 export interface EmotionResult { label: EmotionLabel; confidence: number; explanation: string; scores: Record<EmotionLabel, number> }
@@ -24,6 +26,12 @@ export interface VoiceMeme {
   cover: Blob;
   coverConfig: CoverConfig;
   createdAt: string;
+  /** 多片段编排引用，旧作品缺省为单段音频。 */
+  arrangement?: PersistedArrangement;
+}
+/** 持久化的编排：片段只记录素材选择，原始素材单独保存。 */
+export interface PersistedArrangement {
+  clips: ArrangementClip[];
 }
 
 export function validateCropRange(range: CropRange, duration: number): string | undefined {

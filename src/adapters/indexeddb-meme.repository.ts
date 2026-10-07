@@ -1,11 +1,25 @@
 import type { VoiceMeme } from '../core/models';
 import type { MemeRepository } from '../ports/meme-repository.port';
+import { openStudioDb, requestAsPromise, txAsPromise } from './indexeddb-db';
+
 export interface MemeStoreDriver { list(): Promise<VoiceMeme[]>; put(value: VoiceMeme): Promise<void>; delete(id: string): Promise<void> }
 class BrowserDriver implements MemeStoreDriver {
-  private async db(): Promise<IDBDatabase> { return new Promise((resolve, reject) => { const request = indexedDB.open('c2c-005-voice-memes', 1); request.onupgradeneeded = () => request.result.createObjectStore('memes', { keyPath: 'id' }); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
-  async list(): Promise<VoiceMeme[]> { const db = await this.db(); return new Promise((resolve, reject) => { const request = db.transaction('memes').objectStore('memes').getAll(); request.onsuccess = () => resolve(request.result as VoiceMeme[]); request.onerror = () => reject(request.error); }); }
-  async put(value: VoiceMeme): Promise<void> { const db = await this.db(); return new Promise((resolve, reject) => { const tx = db.transaction('memes', 'readwrite'); tx.objectStore('memes').put(value); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); }); }
-  async delete(id: string): Promise<void> { const db = await this.db(); return new Promise((resolve, reject) => { const tx = db.transaction('memes', 'readwrite'); tx.objectStore('memes').delete(id); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); }); }
+  private async db(): Promise<IDBDatabase> { return openStudioDb(); }
+  async list(): Promise<VoiceMeme[]> {
+    const db = await this.db();
+    try { return await requestAsPromise(db.transaction('memes').objectStore('memes').getAll()) as VoiceMeme[]; }
+    finally { db.close(); }
+  }
+  async put(value: VoiceMeme): Promise<void> {
+    const db = await this.db();
+    try { await txAsPromise((() => { const tx = db.transaction('memes', 'readwrite'); tx.objectStore('memes').put(value); return tx; })()); }
+    finally { db.close(); }
+  }
+  async delete(id: string): Promise<void> {
+    const db = await this.db();
+    try { await txAsPromise((() => { const tx = db.transaction('memes', 'readwrite'); tx.objectStore('memes').delete(id); return tx; })()); }
+    finally { db.close(); }
+  }
 }
 export class IndexedDbMemeRepository implements MemeRepository {
   constructor(private readonly driver: MemeStoreDriver = new BrowserDriver()) {}

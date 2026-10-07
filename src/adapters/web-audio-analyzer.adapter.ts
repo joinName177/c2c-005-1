@@ -1,10 +1,9 @@
 import { normalizeFeatures } from '../core/feature-normalizer';
 import type { AudioAnalyzerPort } from '../ports/audio-analyzer.port';
-import type { DecodedAudio } from './web-audio-cropper.adapter';
+import { browserDecode, type DecodedAudio } from './audio-codec';
 interface Dependencies { decode(blob: Blob): Promise<DecodedAudio> }
-async function decode(blob: Blob): Promise<DecodedAudio> { const context = new AudioContext(); const buffer = await context.decodeAudioData(await blob.arrayBuffer()); const result = { sampleRate: buffer.sampleRate, duration: buffer.duration, channels: [buffer.getChannelData(0).slice()] }; await context.close(); return result; }
 export class WebAudioAnalyzerAdapter implements AudioAnalyzerPort {
-  constructor(private readonly deps: Dependencies = { decode }) {}
+  constructor(private readonly deps: Dependencies = { decode: browserDecode }) {}
   async analyze(blob: Blob) {
     const audio = await this.deps.decode(blob); const samples = audio.channels[0] ?? new Float32Array();
     const rms = samples.length ? Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length) : 0;
