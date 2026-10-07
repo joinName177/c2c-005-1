@@ -1,6 +1,7 @@
 export type EmotionLabel = '暴躁老哥' | '温柔姐姐' | '阴阳怪气' | '元气满满';
-export type StudioStage = 'record' | 'crop' | 'emotion' | 'cover' | 'collection';
+export type StudioStage = 'record' | 'arrange' | 'emotion' | 'cover' | 'collection';
 export interface CropRange { start: number; end: number }
+export interface AudioMaterial { id: string; name: string; blob: Blob; duration: number; createdAt: string }
 export interface AudioFeatures { loudness: number; dynamics: number; pitch: number; zeroCrossing: number; pauseRatio: number; tempoVariation: number }
 export interface EmotionResult { label: EmotionLabel; confidence: number; explanation: string; scores: Record<EmotionLabel, number> }
 export interface CoverConfig {
